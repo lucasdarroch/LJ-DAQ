@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp
+  spec="1.0+"
+  codebase="http://132.206.126.208:2022/FS/FLASH0/">
+  <information>
+    <title>Lake Shore Embedded Chart Recorder</title>
+    <vendor>Lake Shore Cryotronics Inc.</vendor>
+    <homepage href="http://132.206.126.208:2022/index.htm"/>
+    <description>Embedded Chart Recorder application for charting and logging data.</description>
+    <description kind="short">Embedded Chart Recorder.</description>
+  </information>
+  <update check="background" policy="always"/>
+  <security>
+      <all-permissions/>
+  </security>
+  <resources>
+    <j2se version="1.6+"/>
+    <jar href="ChartRecorder__V2.6.jar"/>
+    <jar href="lib/AbsoluteLayout__V2.6.jar"/>
+    <jar href="lib/jfreechart__V2.6.jar"/>
+    <jar href="lib/jcommon__V2.6.jar"/>
+    <jar href="lib/poi__V2.6.jar"/>
+    <property name="javaws.host" value="132.206.126.208"/>
+    <property name="javaws.instrument" value="MODEL350"/>
+  </resources>
+  <application-desc main-class="chartRecorder.ChartRecorderUI">
+  </application-desc>
+
+</jnlp>
