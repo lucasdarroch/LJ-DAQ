@@ -9,7 +9,7 @@ from scipy import stats as st
 
 # Returns the DB name
 def dbname():
-    return 'ETS'
+    return 'ets'
 # Determines the condition for switching on the deadtime filter
 def condition(sensor,time):
     # Magic numbers
@@ -29,28 +29,30 @@ def condition(sensor,time):
         k += 1
     return k
 # Inputs a csv file, runs filter, writes newfile, returns newfile address
-def deadtime(filename):
+def deadtime(filename,rowSpace):
     data = np.genfromtxt(filename,comments='#',delimiter=';',skip_header=1,names=True)
     time = data[data.dtype.names[0]]
-    colspace = len(data.dtype.names)
+    colSpace = len(data.dtype.names)
     k = 0
-    for j in range(1,colspace):
+    for j in range(1,colSpace):
         sensor = data[data.dtype.names[j]]
         k += condition(sensor,time)
         if k > 0:
             break
     if k == 0:
-        newname = filename[:-15]+'_proc'+filename[-15:]
+        newname = filename[:-4]+'_filter'+filename[-4:]
         f = open(newname,'w+')
+        f.write("# Data processed by the deadtime filter\n")
         f.write("%s"%data.dtype.names[0])
-        for j in range(1,colspace):
+        for j in range(1,colSpace):
             f.write(";%s"%data.dtype.names[j])
         avTime = np.average(time)
         f.write("\n%.5f"%avTime)
-        for j in range(1,colspace):
+        for j in range(1,colSpace):
             val = np.average(data[data.dtype.names[j]])
             f.write(";%.5f"%val)
         f.close()
+        rowSpace = 1
     else:
         newname = filename
-    return newname
+    return newname, rowSpace

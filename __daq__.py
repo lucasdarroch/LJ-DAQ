@@ -16,14 +16,16 @@ from labjack import ljm
 scanRate = 1 # Hz
 scanTime = 1/scanRate # s
 # Get current timestamp
-ts = [0,0,0,0];ts[0] = dt.datetime.utcnow().timestamp();ts[3] = dt.datetime.utcnow().timestamp()
+ts = [0,0,0,0];ts[0] = time.time();ts[3] = time.time() 
 today = dt.date.today().strftime("%Y-%m-%d")
 # Output file duration
 chunkTime = 900 # s
 # Archival duration (604800 = weekly)
 archTime = 604800 # s
 fstr = 'LJdata_'
-tstr = 'utc_time'    
+tstr = 'timestamp'    
+rowSpace = 0
+colSpace = 0
 
 # Setup environment
 # Define the path and output directories
@@ -63,14 +65,14 @@ import frg
 sensor = {}
 sensor['names'] = []
 sensor['ident'] = []
-for name in level.names():
-    sensor['names'].append(name)
-    sensor['num%s'%name] = level.number(name)
-    for num in range(sensor['num%s'%name]):
-        sensor['ident'].append(name+'%s'%(num+1))
 for name in thermocouple.names():
     sensor['names'].append(name)
     sensor['num%s'%name] = thermocouple.number(name)
+    for num in range(sensor['num%s'%name]):
+        sensor['ident'].append(name+'%s'%(num+1))
+for name in level.names():
+    sensor['names'].append(name)
+    sensor['num%s'%name] = level.number(name)
     for num in range(sensor['num%s'%name]):
         sensor['ident'].append(name+'%s'%(num+1))
 for name in frg.names():
@@ -82,6 +84,8 @@ for name in frg.names():
 # Pass values to buffer
 def buffer_output():
     return DATA, LOG, fstr, scanRate, chunkTime, tstr, sensor['ident']
+def cache_output():
+    return DATA, CRASH
 
 ##############################################################################
 # COMPACT THIS SECTION #######################################################       
@@ -93,24 +97,23 @@ if __name__ == '__main__':
     
     # LJ setup
     # Connect to the labjack
-    handle = ljm.openS("ANY", "ANY", "470019751")  # device type, connection type, serial no.
+    LJ_dict = {}
+    LJ_dict['handle_1'] = ljm.openS("any", "any", "470019751")  # [TC, K] device type, connection type, serial no.
+    LJ_dict['handle_2'] = ljm.openS("ANY", "ANY", "470019220")  # [RES, FRG] device type, connection type, serial no.
     # Get LJ handle
-    info = ljm.getHandleInfo(handle)
-    
+    LJ_dict['info_1'] = ljm.getHandleInfo(LJ_dict['handle_1'])
+    LJ_dict['info_2'] = ljm.getHandleInfo(LJ_dict['handle_2'])
     # Create dictionaries to store channel/registry information
     aAddresses, aDataTypes, aValues = {},{},{}
     # Find the channel/registry information for each of the sensor suites
-    aAddresses.update(level.main(handle)[0]);aDataTypes.update(level.main(handle)[1]);aValues.update(level.main(handle)[2])
-    aAddresses.update(thermocouple.main(handle)[0]);aDataTypes.update(thermocouple.main(handle)[1]);aValues.update(thermocouple.main(handle)[2])
-    aAddresses.update(frg.main(handle)[0]);aDataTypes.update(frg.main(handle)[1]);aValues.update(frg.main(handle)[2])
+    aAddresses.update(thermocouple.main(LJ_dict['handle_1'])[0]);aDataTypes.update(thermocouple.main(LJ_dict['handle_1'])[1]);aValues.update(thermocouple.main(LJ_dict['handle_1'])[2])
+    aAddresses.update(level.main(LJ_dict['handle_2'])[0]);aDataTypes.update(level.main(LJ_dict['handle_2'])[1]);aValues.update(level.main(LJ_dict['handle_2'])[2])
+    aAddresses.update(frg.main(LJ_dict['handle_2'])[0]);aDataTypes.update(frg.main(LJ_dict['handle_2'])[1]);aValues.update(frg.main(LJ_dict['handle_2'])[2])
     
     # Find crashed data
     for file in os.listdir(DATA):
         if file[-4:] == '.csv':
-            if os.path.join(CRASH,file):
-                os.remove(os.path.join(DATA,file))
-            else:
-                os.rename(os.path.join(DATA,file),os.path.join(CRASH,file))
+            os.rename(os.path.join(DATA,file),os.path.join(CRASH,file))
                 
     # Launch buffer
     subprocess.run('python3 __buffer__.py &',shell=True)
@@ -118,48 +121,50 @@ if __name__ == '__main__':
     # Launch DAQ Loop
     while True:
         # Get time and define datafile
-        ts[1] = dt.datetime.utcnow().timestamp()
-        filename = os.path.join(DATA,'LJdata_%i.csv'%ts[0])
+        ts[1] = time.time()
+        shortname = 'LJdata_%i.csv'%ts[0]
+        filename = os.path.join(DATA,shortname)
         # Create the datafile
         if not os.path.exists(filename):
             f = open(filename,'w+')
-            f.write("# Raw data recorded on %s, with Device type: %i, Connection type: %i, Serial number: %i, IP address: %s, Port: %i, Max bytes per MB: %i" %(ts[0],info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5]))
-            f.write("\n%s"%tstr)
+            f.write("# Raw data recorded on %i, with Device type: %i, Connection type: %i, Serial number: %i, IP address: %s, Port: %i, Max bytes per MB: %i" %(ts[0],LJ_dict['info_1'][0], LJ_dict['info_1'][1], LJ_dict['info_1'][2], ljm.numberToIP(LJ_dict['info_1'][3]), LJ_dict['info_1'][4], LJ_dict['info_1'][5]))
+            f.write("# Raw data recorded on %i, with Device type: %i, Connection type: %i, Serial number: %i, IP address: %s, Port: %i, Max bytes per MB: %i\n" %(ts[0],LJ_dict['info_2'][0], LJ_dict['info_2'][1], LJ_dict['info_2'][2], ljm.numberToIP(LJ_dict['info_2'][3]), LJ_dict['info_2'][4], LJ_dict['info_2'][5]))
+            f.write("%s"%tstr)
             for strname in sensor['ident']:
                 f.write(";%s"%strname)
             f.close()
         # Write to the datafile
         if os.path.exists(filename):
             for name in sensor['names']:
-                results[name] = ljm.eReadAddresses(handle, sensor['num%s'%name], aAddresses[name], aDataTypes[name])
+                if name in thermocouple.names():
+                    results[name] = ljm.eReadAddresses(LJ_dict['handle_1'], sensor['num%s'%name], aAddresses[name], aDataTypes[name])
+                if name in frg.names() or name in level.names():
+                    results[name] = ljm.eReadAddresses(LJ_dict['handle_2'], sensor['num%s'%name], aAddresses[name], aDataTypes[name])
             f = open(filename,'a+')
-            f.write("\n%0.5f"%ts[1])
+            f.write("\n%0.1f"%ts[1])
+            colSpace = 1
             for name in sensor['names']:
                 for j in range(sensor['num%s'%name]):
                     f.write(";%0.5f"%results[name][j])
+                    colSpace += 1
             f.close()
+            rowSpace += 1
         # Send datafile to DB and ARCHIVE
         if (ts[1]-ts[0]) > chunkTime:
             SUBARCH = os.path.join(ARCHIVE,today)    
             if not os.path.exists(SUBARCH):
                 os.mkdir(SUBARCH)
             cachename = os.path.join(SUBARCH,'LJdata_%i.csv.gz'%ts[0])
-            subprocess.run('python3 __cache__.py %s %s'%(filename,cachename),shell=True)
+            subprocess.run('python3 __cache__.py %s %s %s %s'%(shortname,cachename,rowSpace,colSpace),shell=True)
+            rowSpace = 0;colSpace = 0
             if (ts[1]-ts[3]) > archTime:
                 ts[3] = ts[1]
                 today = dt.date.today().strftime("%Y-%m-%d")
             ts[0] = ts[1]
         # Wait until end of scanPeriod
-        ts[2] = dt.datetime.utcnow().timestamp()
+        ts[2] = time.time()
         procTime = ts[2]-ts[1]
         if (scanTime-procTime) > 0:
             waitTime = scanTime-procTime
             time.sleep(waitTime)
-        
-        
-        
-        
-        
-        
-        
-        
+

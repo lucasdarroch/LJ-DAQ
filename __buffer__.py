@@ -74,7 +74,7 @@ resGrad = 3
 gradStatus = True
 gradCount = 0
 # Is the autofill system activated
-autoStatus = True
+autoStatus = False
 autoCount = 0
 
 results = {}
