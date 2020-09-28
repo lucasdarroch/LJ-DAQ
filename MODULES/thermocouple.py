@@ -35,7 +35,7 @@ def main(handle):
     aDataTypes['K'] = [] # [Data types for temperature and voltage measurements]
     ###########################################################################
     # AIN for LM34
-    AINk = 61
+    AINk = 13
     # Converts the LM34 Voltage to deg K
     VAL = [1,100*5/9,273.15-32*5/9]
     TYPE = [1,3,3]
@@ -60,8 +60,8 @@ def main(handle):
     ###########################################################################
     # Setup AIN for T-type TC
     # TC registry value
-    AINp = 48
-    AINn = AINp+8
+    AINp = 0
+    AINn = AINp+1
     # Alter CJC param
     REG[0] = 9600
     VAL[0] = 2*AINk
@@ -75,27 +75,27 @@ def main(handle):
     aValues['AIN#_NEGATIVE_CH'] = []  # [Set EF negative channel, AIN(n+8) with MUX80]
     # Write TC EF parameters
     for i in range(numTC):
-        aAddresses['AIN#_EF_INDEX'].append(9000+2*(i+AINp))
+        aAddresses['AIN#_EF_INDEX'].append(9000+2*(2*i+AINp))
         aDataTypes['AIN#_EF_INDEX'].append(ljm.constants.UINT32)
         aValues['AIN#_EF_INDEX'].append(24)
         # Write CJC EF parameters
         for j in range(len(VAL)):
-            aAddresses['AIN#_EF_INDEX'].append(REG[j]+2*(i+AINp))
+            aAddresses['AIN#_EF_INDEX'].append(REG[j]+2*(2*i+AINp))
             aDataTypes['AIN#_EF_INDEX'].append(TYPE[j])
             aValues['AIN#_EF_INDEX'].append(VAL[j])
 #        aAddresses['AIN#_EF_INDEX'].append(9600+2*(i+AINp))
 #        aDataTypes['AIN#_EF_INDEX'].append(ljm.constants.UINT32)
 #        aValues['AIN#_EF_INDEX'].append(7000+2*AINk)
-        aAddresses['AIN#_NEGATIVE_CH'].append(41000+i+AINp)
+        aAddresses['AIN#_NEGATIVE_CH'].append(41000+2*i+AINp)
         aDataTypes['AIN#_NEGATIVE_CH'].append(ljm.constants.UINT16)
-        aValues['AIN#_NEGATIVE_CH'].append(i+AINn)
+        aValues['AIN#_NEGATIVE_CH'].append(2*i+AINn)
     ljm.eWriteAddresses(handle, len(aAddresses['AIN#_EF_INDEX']), aAddresses['AIN#_EF_INDEX'], aDataTypes['AIN#_EF_INDEX'], aValues['AIN#_EF_INDEX'])
     ljm.eWriteAddresses(handle, len(['AIN#_NEGATIVE_CH']), aAddresses['AIN#_NEGATIVE_CH'], aDataTypes['AIN#_NEGATIVE_CH'], aValues['AIN#_NEGATIVE_CH'])
     # Loop over addresses
     # Thermocouple addresses
     for i in range(numTC):
-        aAddresses['TC'].append(7000+2*(i+AINp))
-        aAddresses['Voltage_TC'].append(7300+2*(i+AINp))
+        aAddresses['TC'].append(7000+2*(2*i+AINp))
+        aAddresses['Voltage_TC'].append(7300+2*(2*i+AINp))
         aDataTypes['TC'].append(ljm.constants.FLOAT32)
     return aAddresses, aDataTypes, aValues
 

@@ -29,10 +29,10 @@ def main(handle):
     aDataTypes['FRG'] = [] # [Data types for pressure and voltage measurements]
     ###########################################################################
     # AIN for FRG
-    AINp = 80
-    AINn = AINp+8
+    AINp = 8
+    AINn = AINp+1
     # Converts the FRG Voltage to deg K
-    VAL = [1,10/6,-10/6*6.875]
+    VAL = [1,10/6,-10/6*6.8]
     #VAL = [1,1,0]
     TYPE = [1,3,3]
     REG = [9000,10200,10500]

@@ -27,7 +27,7 @@ def main(handle):
     aAddresses['AIN#_EF_INDEX'] = []  # [Set EF type address]
     aDataTypes['AIN#_EF_INDEX'] = []  # [Set EF type as int]
     aValues['AIN#_EF_INDEX'] = []  # [Set EF type, 0 for None]
-    AINp = 72
+    AINp = 0
     for i in range(numRES):
         aAddresses['AIN#_EF_INDEX'].append(9000+2*(i+AINp))
         aDataTypes['AIN#_EF_INDEX'].append(ljm.constants.UINT32)
